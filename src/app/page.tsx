@@ -74,7 +74,7 @@ export default function Home() {
           >
             Let Atlas help you create personalized travel itineraries with interactive maps and smart suggestions.
           </motion.p>
-          
+
           <motion.div 
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
             initial={{ opacity: 0, y: 20 }}
