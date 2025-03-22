@@ -21,7 +21,7 @@ type TripFormData = z.infer<typeof tripSchema>
 export default function NewTripPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
   
   const {
     register,
@@ -31,62 +31,65 @@ export default function NewTripPage() {
     resolver: zodResolver(tripSchema),
   })
 
-  const generateSuggestions = async (data: TripFormData) => {
-    setLoading(true)
+  const onSubmit = async (data: TripFormData) => {
     try {
+      setError(null);
+      setLoading(true);
+
+      // Create the trip with suggestions
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      // Get the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Get suggestions from OpenAI
       const response = await fetch('/api/suggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
-      })
+        body: JSON.stringify({
+          destination: data.destination,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          preferences: data.preferences,
+        }),
+      });
 
-      if (!response.ok) throw new Error('Failed to generate suggestions')
+      const suggestionsData = await response.json();
       
-      const { suggestions } = await response.json()
-      setSuggestions(suggestions)
-    } catch (error) {
-      console.error('Error generating suggestions:', error)
-      // We'll add proper error handling later
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!response.ok) {
+        throw new Error('Failed to get suggestions');
+      }
 
-  const onSubmit = async (data: TripFormData) => {
-    setLoading(true)
-    try {
-      // First, generate suggestions
-      await generateSuggestions(data)
-      
-      // Then, save the trip to the database
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-
-      const { error } = await supabase
+      // Create trip in database
+      const { error: insertError } = await supabase
         .from('trips')
         .insert([
           {
+            user_id: session.user.id,
             destination: data.destination,
             start_date: data.startDate,
             end_date: data.endDate,
             preferences: data.preferences,
+            suggestions: suggestionsData.suggestions,
           },
-        ])
+        ]);
 
-      if (error) throw error
+      if (insertError) throw insertError;
 
-      router.push('/trips')
+      router.push('/trips');
     } catch (error) {
-      console.error('Error creating trip:', error)
-      // We'll add proper error handling later
+      console.error('Error creating trip:', error);
+      setError('Failed to create trip. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -96,6 +99,12 @@ export default function NewTripPage() {
           <div className="rounded-lg bg-white p-8 shadow-sm">
             <h1 className="text-2xl font-semibold text-gray-900 mb-6">Create New Trip</h1>
             
+            {error && (
+              <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
@@ -168,19 +177,6 @@ export default function NewTripPage() {
                 </button>
               </div>
             </form>
-
-            {suggestions.length > 0 && (
-              <div className="mt-8 border-t pt-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">AI-Generated Suggestions</h2>
-                <div className="space-y-4">
-                  {suggestions.map((suggestion, index) => (
-                    <div key={index} className="rounded-lg bg-blue-50 p-4">
-                      <p className="text-gray-700">{suggestion}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </main>
       </div>
