@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Atlas - AI-Powered Travel Planning",
-  description: "Plan your perfect trip with AI-powered itinerary generation and interactive maps.",
+  title: "Atlas",
+  description: "Plan your perfect trip with AI-powered itinerary generation!",
 };
 
 export default function RootLayout({

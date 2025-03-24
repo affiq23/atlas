@@ -4,8 +4,33 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Nav } from '@/components/ui/nav'
 import { GlobeAmericasIcon, MapIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { createBrowserClient } from '@supabase/ssr'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   const features = [
     {
       title: 'AI-Powered Planning',
@@ -37,6 +62,18 @@ export default function Home() {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
+  }
+
+  const handleStartPlanning = () => {
+    if (user) {
+      router.push('/trips/new')
+    } else {
+      // Trigger sign in modal by clicking the sign in button in Nav
+      const signInButton = document.querySelector('[data-signin-button]') as HTMLButtonElement
+      if (signInButton) {
+        signInButton.click()
+      }
+    }
   }
 
   return (
@@ -81,19 +118,21 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Link
-              href="/trips/new"
+            <button
+              onClick={handleStartPlanning}
               className="w-full sm:w-auto rounded-lg bg-[#0EA5E9] px-8 py-3 text-base font-medium text-white shadow-lg shadow-blue-500/25 hover:bg-[#0284c7] transition-all duration-200 hover:scale-105 active:scale-100"
             >
               Start Planning
-            </Link>
-            <Link 
-              href="/trips" 
-              className="w-full sm:w-auto text-base font-medium text-gray-900 hover:text-[#0EA5E9] transition-colors flex items-center justify-center gap-2 group"
-            >
-              View My Trips 
-              <span aria-hidden="true" className="group-hover:translate-x-0.5 transition-transform">→</span>
-            </Link>
+            </button>
+            {user && (
+              <Link 
+                href="/trips" 
+                className="w-full sm:w-auto text-base font-medium text-gray-900 hover:text-[#0EA5E9] transition-colors flex items-center justify-center gap-2 group"
+              >
+                View My Trips 
+                <span aria-hidden="true" className="group-hover:translate-x-0.5 transition-transform">→</span>
+              </Link>
+            )}
           </motion.div>
 
           {/* Feature cards */}

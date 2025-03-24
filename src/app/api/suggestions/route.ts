@@ -19,41 +19,45 @@ export async function POST(request: Request) {
 
     // Create a prompt for OpenAI
     const prompt = `Create a detailed ${duration}-day travel itinerary for ${destination}.
-${preferences ? `Consider these preferences: ${preferences}\n` : ""}
-Format your response EXACTLY as follows for EACH day:
+      ${preferences ? `Consider these preferences: ${preferences}\n` : ""}
+      Format your response EXACTLY as follows for EACH day:
 
-### Day 1: [Day Title]
+      ### Day 1: [Day Title]
 
-# Must-Visit Attractions and Landmarks
-- [Attraction 1]: [Brief description]
-- [Attraction 2]: [Brief description]
+      # Must-Visit Attractions and Landmarks
+      - [Attraction 1]: [Brief description]
+      - [Attraction 2]: [Brief description]
+      - [Attraction 3]: [Brief description]
 
-# Local Food and Restaurants
-- [Restaurant/Food 1]: [Brief description]
-- [Restaurant/Food 2]: [Brief description]
 
-# Cultural Experiences and Activities
-- [Activity 1]: [Brief description]
-- [Activity 2]: [Brief description]
+      # Local Food and Restaurants
+      - [Restaurant/Food 1]: [Brief description]
+      - [Restaurant/Food 2]: [Brief description]
+      - [Restaurant/Food 3]: [Brief description]
 
-After all days, include these sections:
+      # Cultural Experiences and Activities
+      - [Activity 1]: [Brief description]
+      - [Activity 2]: [Brief description]
+      - [Activity 3]: [Brief description]
 
-# Best Areas to Stay
-- [Area 1]: [Brief description]
-- [Area 2]: [Brief description]
+      After all days, include these sections:
 
-# Transportation Tips
-- [Tip 1]: [Brief description]
-- [Tip 2]: [Brief description]
+      # Best Areas to Stay
+      - [Area 1]: [Brief description]
+      - [Area 2]: [Brief description]
 
-IMPORTANT FORMATTING RULES:
-1. Use ### for day headers (e.g., ### Day 1: Downtown Exploration)
-2. Use # for section headers (exactly as shown above)
-3. Use - for list items
-4. Keep descriptions concise and clear
-5. Do not use any other markdown formatting
-6. Maintain consistent spacing
-7. Include all sections for each day`;
+      # Transportation Tips
+      - [Tip 1]: [Brief description]
+      - [Tip 2]: [Brief description]
+
+      IMPORTANT FORMATTING RULES:
+      1. Use ### for day headers (e.g., ### Day 1: Downtown Exploration)
+      2. Use # for section headers (exactly as shown above)
+      3. Use - for list items
+      4. Keep descriptions concise and clear
+      5. Do not use any other markdown formatting
+      6. Maintain consistent spacing
+      7. Include all sections for each day`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
